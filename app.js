@@ -46,16 +46,15 @@ client.on('guildMemberAdd', member => {
 })
 
 client.on('messageCreate', message => {
+    if(message.author.bot) return
+    
     const server = client.guilds.cache.get(Bun.env.SERVER_ID)
     const botChannel = client.channels.cache.get(Bun.env.BOT_CHANNEL_ID)
     const channelID = message.channel.id
     const memberRoles = message.member.roles.cache
     const userID = message.author.id
 
-    if(message.author.bot) return
-
     //Личка
-
     if(!message.guild && !message.author.bot) {
         //Скриншот недели смена баннера через лс
         if(userID === Bun.env.WEEKLY_IMG_HOST_ID) {
