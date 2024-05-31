@@ -21,6 +21,7 @@ const client = new Client({
 const stickyMessages = await Bun.file('json/stickyMessages.json').json()
 let stickyTimeout = false
 const mutedUsers = await Bun.file('json/mutedUsers.json').json()
+let lastRenderedEvents = []
 
 client.once('ready', async client => {
     const server = client.guilds.cache.get(Bun.env.SERVER_ID)
@@ -33,6 +34,7 @@ client.once('ready', async client => {
     setInterval(() => {
         updatePlayerCount()
         updateMuteStatus(server, botChannel)
+        renderEvents(server)
     }, 60000)
 })
 
@@ -212,4 +214,40 @@ function renderStickyMessage(message) {
         .setDescription(message)
         .setFooter({ text: 'Модерация VRChatRU', iconURL: 'https://i.imgur.com/72pQbbd.png' })
     return embed
+}
+
+async function renderEvents(server) {
+    const events = await server.scheduledEvents.fetch()
+    events.sort((a, b) => (a.scheduledStartTimestamp - b.scheduledStartTimestamp))
+
+    const renderedEvents = []
+    events.forEach(event => {
+        if(event.scheduledStartTimestamp > Date.now() + 604800000) return
+        if(event.entityMetadata.location !== 'https://vrc.group/VRCRU.4111') return
+        renderedEvents.push({
+            name: event.name,
+            desc: event.description.split('\n\n')[0],
+            time: event.scheduledStartTimestamp,
+            end: event.scheduledEndTimestamp,
+            by: event.creator.globalName
+        })
+    })
+    if(JSON.stringify(lastRenderedEvents) === JSON.stringify(renderedEvents)) return
+    lastRenderedEvents = renderedEvents
+
+    const options = {
+		method: 'PATCH',
+		headers: {
+			'User-Agent': 'VRChatRU Event Manager v1',
+			Accept: 'application/vnd.github+json',
+			'X-GitHub-Api-Version': '2022-11-28',
+		  	Authorization: Bun.env.GITHUB_TOKEN
+		},
+		body: JSON.stringify({ files: {
+			"vrcruEvents.json": { content: JSON.stringify(renderedEvents, null, 2) }
+		}})
+	}
+	const response = await fetch('https://api.github.com/gists/' + Bun.env.GIST_ID, options)
+	const { data } = await response.json()
+	return data
 }
