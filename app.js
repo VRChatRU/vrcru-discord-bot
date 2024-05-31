@@ -227,8 +227,8 @@ async function renderEvents(server) {
         renderedEvents.push({
             name: event.name,
             desc: event.description.split('\n\n')[0],
-            time: event.scheduledStartTimestamp,
-            end: event.scheduledEndTimestamp,
+            time: Math.round(event.scheduledStartTimestamp / 1000),
+            end: Math.round(event.scheduledEndTimestamp / 1000),
             by: event.creator.globalName
         })
     })
