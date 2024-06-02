@@ -223,12 +223,16 @@ async function renderEvents(server) {
     events.forEach(event => {
         if(event.scheduledStartTimestamp > Date.now() + 604800000) return
         if(event.entityMetadata.location !== 'https://vrc.group/VRCRU.4111') return
+        let fixedEndTimestamp = event.scheduledEndTimestamp
+        if(event.scheduledStartTimestamp > event.scheduledEndTimestamp) {//Фикс бага дискорда
+            fixedEndTimestamp = event.scheduledStartTimestamp + (event.scheduledStartTimestamp - event.scheduledEndTimestamp)
+        }
         renderedEvents.push({
             name: event.name,
             desc: event.description.split('\n\n')[0],
             time: Math.round(event.scheduledStartTimestamp / 1000),
-            end: Math.round(event.scheduledEndTimestamp / 1000),
-            day: getUTCDayOfWeek(event.scheduledStartTimestamp),
+            end: Math.round(fixedEndTimestamp / 1000),
+            day: getUTCDayOfWeek(event.scheduledStartTimestamp),//Костыль для удона
             by: event.creator.globalName
         })
     })
