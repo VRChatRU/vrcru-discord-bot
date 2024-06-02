@@ -50,7 +50,6 @@ client.on('guildMemberAdd', member => {
 client.on('messageCreate', message => {
     if(message.author.bot) return
     
-    const server = client.guilds.cache.get(Bun.env.SERVER_ID)
     const botChannel = client.channels.cache.get(Bun.env.BOT_CHANNEL_ID)
     const channelID = message.channel.id
     const memberRoles = message.member.roles.cache
@@ -58,6 +57,7 @@ client.on('messageCreate', message => {
 
     //Личка
     if(!message.guild && !message.author.bot) {
+        const server = client.guilds.cache.get(Bun.env.SERVER_ID)
         //Скриншот недели смена баннера через лс
         if(userID === Bun.env.WEEKLY_IMG_HOST_ID) {
             if (message.attachments.size > 0) {
@@ -229,6 +229,7 @@ async function renderEvents(server) {
             desc: event.description.split('\n\n')[0],
             time: Math.round(event.scheduledStartTimestamp / 1000),
             end: Math.round(event.scheduledEndTimestamp / 1000),
+            day: getUTCDayOfWeek(event.scheduledStartTimestamp),
             by: event.creator.globalName
         })
     })
@@ -250,4 +251,11 @@ async function renderEvents(server) {
 	const response = await fetch('https://api.github.com/gists/' + Bun.env.GIST_ID, options)
 	const { data } = await response.json()
 	return data
+}
+
+function getUTCDayOfWeek(timestamp) {
+    const date = new Date(timestamp)
+    const utcDate = new Date(date.toUTCString())
+    const dayOfWeek = utcDate.getUTCDay()
+    return dayOfWeek
 }
