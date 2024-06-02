@@ -49,15 +49,13 @@ client.on('guildMemberAdd', member => {
 
 client.on('messageCreate', message => {
     if(message.author.bot) return
-    
+    const server = client.guilds.cache.get(Bun.env.SERVER_ID)
     const botChannel = client.channels.cache.get(Bun.env.BOT_CHANNEL_ID)
     const channelID = message.channel.id
-    const memberRoles = message.member.roles.cache
     const userID = message.author.id
 
     //Личка
     if(!message.guild && !message.author.bot) {
-        const server = client.guilds.cache.get(Bun.env.SERVER_ID)
         //Скриншот недели смена баннера через лс
         if(userID === Bun.env.WEEKLY_IMG_HOST_ID) {
             if (message.attachments.size > 0) {
@@ -72,6 +70,7 @@ client.on('messageCreate', message => {
         }
     }
     if(!message.guild) return
+    const memberRoles = message.member.roles.cache
 
     //Скриншот недели добавление плюса
     if(channelID === Bun.env.WEEKLY_IMG_CHANNEL_ID && userID === Bun.env.WEEKLY_IMG_HOST_ID) {
