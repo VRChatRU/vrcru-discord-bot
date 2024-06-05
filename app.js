@@ -20,7 +20,9 @@ const client = new Client({
 
 const stickyMessages = await Bun.file('json/stickyMessages.json').json()
 let stickyTimeout = false
+
 const mutedUsers = await Bun.file('json/mutedUsers.json').json()
+
 let lastRenderedEvents = []
 
 client.once('ready', async client => {
@@ -54,10 +56,9 @@ client.on('messageCreate', message => {
     const channelID = message.channel.id
     const userID = message.author.id
 
-    //Личка
+    // ЛС
     if(!message.guild && !message.author.bot) {
-        //Скриншот недели смена баннера через лс
-        if(userID === Bun.env.WEEKLY_IMG_HOST_ID) {
+        if(userID === Bun.env.WEEKLY_IMG_HOST_ID) {// Скриншот недели смена баннера через лс
             if (message.attachments.size > 0) {
                 const attachments = []
                 message.attachments.forEach(attachment => {
@@ -69,29 +70,11 @@ client.on('messageCreate', message => {
             }
         }
     }
-    if(!message.guild) return
+    // Дискорд сервер
+    if(!message.guild.id !== Bun.env.SERVER_ID) return
     const memberRoles = message.member.roles.cache
 
-    //Скриншот недели добавление плюса
-    if(channelID === Bun.env.WEEKLY_IMG_CHANNEL_ID && userID === Bun.env.WEEKLY_IMG_HOST_ID) {
-        if (message.attachments.size > 0) {
-            message.react('<:Icon_VRChatPlus:918776313953792041>')
-            // message.react('✅')
-        }
-    }
-
-    //Кинотеатр добавление оценок
-    if(channelID === Bun.env.CINEMA_CHANNEL_ID && (memberRoles.has(Bun.env.MOD_ROLE_ID) || memberRoles.has(Bun.env.ORG_ROLE_ID))) {
-        if(!message.content.match(/Как\sвам\s/g)) return
-        message.react('1⃣')
-        message.react('2⃣')
-        message.react('3⃣')
-        message.react('4⃣')
-        message.react('5⃣')
-    }
-
-    //Обновить стики сообщение
-    stickyMessages.forEach(sticky => {
+    stickyMessages.forEach(sticky => {// Обновить стики сообщение
         if(stickyTimeout) return
         if(channelID === sticky.channel) {
             stickyTimeout = true
@@ -106,13 +89,12 @@ client.on('messageCreate', message => {
             }, 10000)
         }
     })
-    
-    //Команды модераторов
 
+    // Только модераторы
     if(!memberRoles.has(Bun.env.MOD_ROLE_ID)) return
 
-    //Долгий мут ?warn ID123 Вы были заглушенны на N дней || ?smute ID123 N дней
-    if(channelID === Bun.env.MOD_LOG_CHANNEL_ID) {
+    // Мод лог
+    if(channelID === Bun.env.MOD_LOG_CHANNEL_ID) {// Долгий мут ?warn ID123 Вы были заглушенны на N дней || ?smute ID123 N дней
         if(message.content.match(/\?warn\s\d{18}\sВы\sбыли\sзаглушены\sна\s\d{1,3}\sдней/g) || message.content.match(/\?smute\s\d{18}\s\d{1,3}\sдней/g)) {
             const targetUserID = message.content.match(/\d{18}/g)[0]
             const timeoutLength = message.content.match(/\d{1,3}\sдней/g)[0].replace(' дней', '')
@@ -133,13 +115,10 @@ client.on('messageCreate', message => {
         }
     }
 
-    //Бот чат
-
+    // Бот чат
     if(channelID !== Bun.env.BOT_CHANNEL_ID) return
-    // console.log('Bot channel message: ' + message.content)
 
-    //Добавить стики сообщение ?stick [Ид канала]
-    if(message.content.match(/\?stick\s<#\d{18,19}>\s/g)) {
+    if(message.content.match(/\?stick\s<#\d{18,19}>\s/g)) {// Добавить стики сообщение ?stick [Ид канала]
         const targetChannel = client.channels.cache.get(message.content.match(/\d{18,19}/g)[0])
         const stickyMessage = message.content.replace(/\?stick\s<#\d{18,19}>\s/g, '')
         targetChannel.send({ embeds: [renderStickyMessage(stickyMessage)] }).then(message => {
@@ -153,8 +132,7 @@ client.on('messageCreate', message => {
         message.react('✅')
     }
 
-    //Удалить стики сообщение
-    if(message.content.match(/\?delstick\s<#\d{18,19}>/g)) {
+    if(message.content.match(/\?delstick\s<#\d{18,19}>/g)) {// Удалить стики сообщение
         const targetChannel = client.channels.cache.get(message.content.match(/\d{18,19}/g)[0])
         stickyMessages.forEach((sticky, i) => {
             if(sticky.channel === targetChannel.id) {
@@ -166,8 +144,7 @@ client.on('messageCreate', message => {
         })
     }
 
-    // ?say
-    if(message.content.match(/\?say\s<#\d{18,19}>\s/g)) {
+    if(message.content.match(/\?say\s<#\d{18,19}>\s/g)) {// ?say
         const targetChannel = client.channels.cache.get(message.content.match(/\d{18,19}/g)[0])
         const botMessage = message.content.replace(/\?say\s<#\d{18,19}>\s/g, '')
         targetChannel.send(botMessage)
@@ -180,12 +157,10 @@ client.login(Bun.env.BOT_TOKEN)
 async function updatePlayerCount() {
     try {
         const response = await fetch('https://api.vrchat.cloud/api/1/visits', {
-            headers: { 'User-Agent': 'VRChatRU discord bot/3.0 vard@disroot.org' },
+            headers: { 'User-Agent': Bun.env.USER_AGENT },
         })
         const body = await response.json()
-
         if(!Number(body)) return
-
         client.user.setPresence({
             activities: [{ name: `VRChat с ${body} пользователями`, type: ActivityType.Playing }]
         })
@@ -208,10 +183,10 @@ async function updateMuteStatus(server, botChannel) {
 
 function renderStickyMessage(message) {
     const embed = new EmbedBuilder()
-        .setColor(0xf1c41b)
-        .setTitle('Внимание!')
+        .setColor(Bun.env.COLOR)
+        .setTitle(Bun.env.STICKY_HEADER)
         .setDescription(message)
-        .setFooter({ text: 'Модерация VRChatRU', iconURL: 'https://i.imgur.com/72pQbbd.png' })
+        .setFooter({ text: Bun.env.STICKY_FOOTER, iconURL: Bun.env.STICKY_ICON_URL })
     return embed
 }
 
@@ -222,9 +197,9 @@ async function renderEvents(server) {
     const renderedEvents = []
     events.forEach(event => {
         if(event.scheduledStartTimestamp > Date.now() + 604800000) return
-        if(event.entityMetadata.location !== 'https://vrc.group/VRCRU.4111') return
+        if(event.entityMetadata.location !== Bun.env.VRC_EVENTS_REQ_LOC) return
         let fixedEndTimestamp = event.scheduledEndTimestamp
-        if(event.scheduledStartTimestamp > event.scheduledEndTimestamp) {//Фикс бага дискорда
+        if(event.scheduledStartTimestamp > event.scheduledEndTimestamp) {// Фикс бага дискорда
             fixedEndTimestamp = event.scheduledStartTimestamp + (event.scheduledStartTimestamp - event.scheduledEndTimestamp)
         }
         renderedEvents.push({
@@ -232,7 +207,7 @@ async function renderEvents(server) {
             desc: event.description.split('\n\n')[0],
             time: Math.round(event.scheduledStartTimestamp / 1000),
             end: Math.round(fixedEndTimestamp / 1000),
-            day: getUTCDayOfWeek(event.scheduledStartTimestamp),//Костыль для удона
+            day: getUTCDayOfWeek(event.scheduledStartTimestamp),// Костыль для удона
             by: event.creator.globalName
         })
     })
@@ -242,7 +217,7 @@ async function renderEvents(server) {
     const options = {
 		method: 'PATCH',
 		headers: {
-			'User-Agent': 'VRChatRU Event Manager v1',
+			'User-Agent': Bun.env.USER_AGENT,
 			Accept: 'application/vnd.github+json',
 			'X-GitHub-Api-Version': '2022-11-28',
 		  	Authorization: Bun.env.GITHUB_TOKEN
