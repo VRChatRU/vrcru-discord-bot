@@ -183,7 +183,7 @@ async function updateMuteStatus(server, botChannel) {
 
 function renderStickyMessage(message) {
     const embed = new EmbedBuilder()
-        .setColor(Bun.env.COLOR)
+        .setColor(0xf1c41b)
         .setTitle(Bun.env.STICKY_HEADER)
         .setDescription(message)
         .setFooter({ text: Bun.env.STICKY_FOOTER, iconURL: Bun.env.STICKY_ICON_URL })
