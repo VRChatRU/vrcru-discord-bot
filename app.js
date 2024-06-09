@@ -71,6 +71,7 @@ client.on('messageCreate', message => {
         }
     }
     // Дискорд сервер
+    if(!message.guild) return
     if(message.guild.id !== Bun.env.SERVER_ID) return
     const memberRoles = message.member.roles.cache
 
