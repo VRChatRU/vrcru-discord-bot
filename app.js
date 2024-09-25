@@ -96,7 +96,7 @@ client.on('messageCreate', message => {
 
     // Мод лог
     if(channelID === Bun.env.MOD_LOG_CHANNEL_ID) {// Долгий мут ?warn ID123 Вы были заглушенны на N дней || ?smute ID123 N дней
-        if(message.content.match(/\?warn\s\d{18,19}\sВы\sбыли\sзаглушены\sна\s\d{1,3}\sдней/g) || message.content.match(/\?smute\s\d{{18,19}\s\d{1,3}\sдней/g)) {
+        if(message.content.match(/\?warn\s\d{18,19}\sВы\sбыли\sзаглушены\sна\s\d{1,3}\sдней/g) || message.content.match(/\?smute\s\d{18,19}\s\d{1,3}\sдней/g)) {
             const targetUserID = message.content.match(/\d{18,19}/g)[0]
             const timeoutLength = message.content.match(/\d{1,3}\sдней/g)[0].replace(' дней', '')
             try {
